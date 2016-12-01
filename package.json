@@ -1,0 +1,22 @@
+{
+  "name": "tjbot-raspberrypi-nodejs",
+  "version": "1.0.0",
+  "description": "TJBot Has Feelings",
+  "main": "run.js",
+  "scripts": {
+    "start": "node run.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:boxcarton/tjbot-raspberrypi-nodejs.git"
+  },
+  "author": "Josh Zheng",
+  "dependencies": {
+    "bluebird": "^3.4.6",
+    "mic": "^2.1.1",
+    "play-sound": "^1.1.1",
+    "prompt": "^1.0.0",
+    "watson-developer-cloud": "^2.2.0"
+  }
+}
