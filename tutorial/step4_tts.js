@@ -1,5 +1,5 @@
 var watson = require('watson-developer-cloud'); //to connect to Watson developer cloud
-var config = require("./config.js") // to get our credentials and the attention word from the config.js files
+var config = require('./config.js') // to get our credentials and the attention word from the config.js files
 var fs = require('fs');
 var player = require('play-sound')(opts = {})
 
@@ -9,7 +9,7 @@ var text_to_speech = watson.text_to_speech({
   version: 'v1'
 });
 
-text = "Hello World"
+text = 'Hello World'
 
 var params = {
   text: text,
