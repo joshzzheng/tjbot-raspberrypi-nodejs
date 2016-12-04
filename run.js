@@ -3,7 +3,6 @@ const config = require('./config.js')
 const fs = require('fs');
 const mic = require('mic');
 const player = require('play-sound')(opts = {})
-const wavFileInfo = require('wav-file-info');
 const probe = require('node-ffprobe');
 
 const attentionWord = config.attentionWord;
@@ -109,6 +108,7 @@ const speakResponse = (text) => {
     });
   });
 }
+speakResponse('Hi there, I am awake.');
 
 /******************************************************************************
 * Conversation

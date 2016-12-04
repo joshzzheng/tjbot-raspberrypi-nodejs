@@ -112,6 +112,7 @@ const speakResponse = (text) => {
     });
   });
 }
+speakResponse('Hi there, I am awake.');
 
 /******************************************************************************
 * Conversation
