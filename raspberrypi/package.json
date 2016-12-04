@@ -14,9 +14,6 @@
   "author": "Josh Zheng",
   "dependencies": {
     "mic": "^2.1.1",
-    "node-ffprobe": "^1.2.2",
-    "play-sound": "^1.1.1",
-    "prompt": "^1.0.0",
     "watson-developer-cloud": "^2.2.0"
   }
 }

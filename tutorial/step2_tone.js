@@ -1,14 +1,14 @@
-var watson = require('watson-developer-cloud'); //to connect to Watson developer cloud
-var config = require('./config.js') // to get our credentials and the attention word from the config.js files
+const watson = require('watson-developer-cloud'); 
+const config = require('../config.js');
 
-var tone_analyzer = watson.tone_analyzer({
+const tone_analyzer = watson.tone_analyzer({
   username: config.ToneUsername,
   password: config.TonePassword,
   version: 'v3',
   version_date: '2016-05-19'
 });
 
-var text = 'I love you watson'
+let text = 'I love you watson'
 tone_analyzer.tone({text: text}, function(err, tone) {
   console.log(JSON.stringify(tone, null, 2));
 });

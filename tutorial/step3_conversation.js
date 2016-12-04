@@ -1,8 +1,8 @@
-var watson = require('watson-developer-cloud'); //to connect to Watson developer cloud
-var config = require('./config.js') // to get our credentials and the attention word from the config.js files
-var prompt = require('prompt');
+const watson = require('watson-developer-cloud'); //to connect to Watson developer cloud
+const config = require('../config.js') // to get our credentials and the attention word from the config.js files
+const prompt = require('prompt');
 
-var conversation = watson.conversation({
+const conversation = watson.conversation({
   username: config.ConUsername,
   password: config.ConPassword,
   version: 'v1',
@@ -11,9 +11,10 @@ var conversation = watson.conversation({
 
 prompt.start();
 
-var context = {}
+let context = {}
 let converse = () => 
   prompt.get('input', (err, result) => {
+    context.emotion = 'anger'; //replace with results from Tone Analzyer
     conversation.message({
       workspace_id: config.ConWorkspace,
       input: {'text': result.input},

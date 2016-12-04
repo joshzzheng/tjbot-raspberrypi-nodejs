@@ -1,138 +1,154 @@
-var watson = require('watson-developer-cloud'); //to connect to Watson developer cloud
-var config = require("./config.js") // to get our credentials and the attention word from the config.js files
-var exec = require('child_process').exec;
-var fs = require('fs');
-var player = require('play-sound')(opts = {})
+const watson = require('watson-developer-cloud');
+const config = require('./config.js')
+const exec = require('child_process').exec;
+const fs = require('fs');
+const mic = require('mic');
+const probe = require('node-ffprobe');
 
-var speech_to_text = watson.speech_to_text({
+const attentionWord = config.attentionWord;
+
+/******************************************************************************
+* Create Watson Services
+*******************************************************************************/
+const speechToText = watson.speech_to_text({
   username: config.STTUsername,
   password: config.STTPassword,
   version: 'v1'
 });
 
-var conversation = watson.conversation({
+const toneAnalyzer = watson.tone_analyzer({
+  username: config.ToneUsername,
+  password: config.TonePassword,
+  version: 'v3',
+  version_date: '2016-05-19'
+});
+
+const conversation = watson.conversation({
   username: config.ConUsername,
   password: config.ConPassword,
   version: 'v1',
   version_date: '2016-07-11'
 });
 
-var text_to_speech = watson.text_to_speech({
+const textToSpeech = watson.text_to_speech({
   username: config.TTSUsername,
   password: config.TTSPassword,
   version: 'v1'
 });
 
-var attentionWord = config.attentionWord; //you can change the attention word in the config file
-
-var mic = require('mic');
-var micInstance = mic({ 'rate': '44100', 'channels': '2', 'debug': false, 'exitOnSilence': 6 });
-var micInputStream = micInstance.getAudioStream();
-micInstance.start();
-console.log("TJ is listening, you may speak now.");
-
-var textStream = micInputStream.pipe(speech_to_text.createRecognizeStream({
-  content_type: 'audio/l16; rate=44100; channels=2',
-  interim_results: true,
-  keywords: [attentionWord],
-  smart_formatting: 'true',
-  keywords_threshold: 0.5
-})).setEncoding('utf8');
-
-
-var context = null;
-var conversation_response = "";
-
-textStream.on('data', function(speech) {
-  speech = speech.toLowerCase();
-  if (context) {
-    console.log("Recorded: " + speech);
-    conversation.message({
-      workspace_id: config.ConWorkspace,
-      input: {'text': speech},
-      context: context
-    },  function(err, response) {
-      if (err) {
-        console.log('error:', err);
-      } else {
-        context = response.context;
-        conversation_response =  response.output.text[0]  ;
-        if (conversation_response != undefined ){
-          var params = {
-            text: response.output.text[0],
-            voice: config.voice,
-            accept: 'audio/wav'
-          };
-
-          console.log("Result from conversation:", conversation_response);
-          /*********************************************************************
-          Step #5: Speak out the response
-          *********************************************************************
-          In this step, we text is sent out to Watsons Text to Speech service and result is piped to wave file.
-          Wave files are then played using alsa (native audio) tool.
-          */
-          
-          text_to_speech.synthesize(params).pipe(fs.createWriteStream('output.wav')).on('close', function() {
-            //var create_audio = exec('aplay output.wav', function (error, stdout, stderr) {
-            //  if (error !== null) {
-            //    console.log('exec error: ' + error);
-            //  }
-            //});
-            player.play('output.wav');
-          });
-        } else {
-          console.log("The response (output) text from your conversation is empty. Please check your conversation flow \n" + JSON.stringify( response))
-        }
-
-      }
-    })    
-  } else if (!context && speech.indexOf(attentionWord.toLowerCase()) >= 0) {
-    console.log("msg sent to conversation:" ,speech);
-    conversation.message({
-      workspace_id: config.ConWorkspace,
-      input: {'text': speech},
-      context: context
-    },  function(err, response) {
-      if (err) {
-        console.log('error:', err);
-      } else {
-        context = response.context;
-        conversation_response =  response.output.text[0]  ;
-        if (conversation_response != undefined ){
-          var params = {
-            text: response.output.text[0],
-            voice: config.voice,
-            accept: 'audio/wav'
-          };
-
-          console.log("Result from conversation:", conversation_response);
-          /*********************************************************************
-          Step #5: Speak out the response
-          *********************************************************************
-          In this step, we text is sent out to Watsons Text to Speech service and result is piped to wave file.
-          Wave files are then played using alsa (native audio) tool.
-          */
-          
-          text_to_speech.synthesize(params).pipe(fs.createWriteStream('output.wav')).on('close', function() {
-            //var create_audio = exec('aplay output.wav', function (error, stdout, stderr) {
-            //  if (error !== null) {
-            //    console.log('exec error: ' + error);
-            //  }
-            //});
-            player.play('output.wav');
-          });
-        } else {
-          console.log("The response (output) text from your conversation is empty. Please check your conversation flow \n" + JSON.stringify( response))
-        }
-
-      }
-
-    })
-  } else {
-    console.log("Waiting to hear", attentionWord);
-  }
+/******************************************************************************
+* Configuring the Microphone
+*******************************************************************************/
+let pauseDuration = 0;
+const micParams = { 
+  'rate': '44100', 
+  'channels': '2', 
+  'debug': false, 
+  'exitOnSilence': 6
+}
+const micInstance = mic(micParams);
+const micInputStream = micInstance.getAudioStream();
+micInputStream.on('pauseComplete', ()=> {
+  console.log('Microphone paused for', pauseDuration, 'seconds.');
+  setTimeout(function() {
+      micInstance.resume();
+      console.log('Microphone resumed.')
+  }, Math.round(pauseDuration * 1000)); //Stop listening when speaker is talking
 });
 
-textStream.on('error', function(err) {
-  console.log(' ===== An Error has occurred ===== \nYou may have exceeded your payload quota.\n ' + JSON.stringify(err) + "\n Press <ctrl>+C to exit.") ; // handle errors
+micInstance.start();
+console.log('TJ is listening, you may speak now.');
+
+/******************************************************************************
+* Speech To Text
+*******************************************************************************/
+const textStream = micInputStream.pipe(speechToText.createRecognizeStream({
+  content_type: 'audio/l16; rate=44100; channels=2',
+  interim_results: true,
+  smart_formatting: true,
+})).setEncoding('utf8');
+
+/******************************************************************************
+* Get Emotional Tone
+*******************************************************************************/
+const getEmotion = (text) => {
+  return new Promise((resolve) => {
+    let maxScore = 0;
+    let emotion = null;
+    toneAnalyzer.tone({text: text}, (err, tone) => {
+      let tones = tone.document_tone.tone_categories[0].tones;
+      for (let i=0; i<tones.length; i++) {
+        if (tones[i].score > maxScore){
+          maxScore = tones[i].score;
+          emotion = tones[i].tone_id;
+        }
+      }
+      resolve({emotion, maxScore});
+    })
+  })
+};
+
+
+/******************************************************************************
+* Text To Speech
+*******************************************************************************/
+const speakResponse = (text) => {
+  const params = {
+    text: text,
+    voice: config.voice,
+    accept: 'audio/wav'
+  };
+  textToSpeech.synthesize(params)
+  .pipe(fs.createWriteStream('output.wav'))
+  .on('close', () => {
+    probe('output.wav', function(err, probeData) {
+      pauseDuration = probeData.format.duration + 0.5;
+      micInstance.pause();
+      exec('aplay output.wav', function (error, stdout, stderr) {
+        if (error !== null) {
+          console.log('exec error: ' + error);
+        }
+      });
+    });
+  });
+}
+
+/******************************************************************************
+* Conversation
+******************************************************************************/
+let dialog_on = false;
+let context = {};
+let watson_response = '';
+
+textStream.on('data', (user_speech) => {
+  user_speech = user_speech.toLowerCase();
+  console.log('Watson hears: ', user_speech);
+  if (user_speech.indexOf(attentionWord.toLowerCase()) >= 0){
+    dialog_on = true
+  }
+
+  if (dialog_on) {
+    getEmotion(user_speech).then((detectedEmotion) => {
+      context.emotion = detectedEmotion.emotion;
+      console.log('Detected Emotion: ', 
+                  detectedEmotion.emotion, 
+                  detectedEmotion.maxScore);
+      conversation.message({
+        workspace_id: config.ConWorkspace,
+        input: {'text': user_speech},
+        context: context
+      }, (err, response) => {
+        context = response.context;
+        watson_response =  response.output.text[0];
+        speakResponse(watson_response);
+        console.log('Watson says:', watson_response);
+        if(context.system.dialog_turn_counter == 2) {
+          context = {};
+          start_dialog = false;
+        }
+      });
+    });  
+  } else {
+    console.log('Waiting to hear the word "', attentionWord, '"');
+  }
 });

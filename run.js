@@ -1,82 +1,84 @@
-var Promise = require('bluebird');
-var watson = require('watson-developer-cloud');
-var config = require('./config.js')
-var exec = require('child_process').exec;
-var fs = require('fs');
-var mic = require('mic');
-var player = require('play-sound')(opts = {})
+const watson = require('watson-developer-cloud');
+const config = require('./config.js')
+const fs = require('fs');
+const mic = require('mic');
+const player = require('play-sound')(opts = {})
+const wavFileInfo = require('wav-file-info');
+const probe = require('node-ffprobe');
 
-var attentionWord = config.attentionWord;
+const attentionWord = config.attentionWord;
 
 /******************************************************************************
-* Step #1: Create Watson Services
+* Create Watson Services
 *******************************************************************************/
-var speechToText = watson.speech_to_text({
+const speechToText = watson.speech_to_text({
   username: config.STTUsername,
   password: config.STTPassword,
   version: 'v1'
 });
 
-var toneAnalyzer = watson.tone_analyzer({
+const toneAnalyzer = watson.tone_analyzer({
   username: config.ToneUsername,
   password: config.TonePassword,
   version: 'v3',
   version_date: '2016-05-19'
 });
 
-var conversation = watson.conversation({
+const conversation = watson.conversation({
   username: config.ConUsername,
   password: config.ConPassword,
   version: 'v1',
   version_date: '2016-07-11'
 });
 
-var textToSpeech = watson.text_to_speech({
+const textToSpeech = watson.text_to_speech({
   username: config.TTSUsername,
   password: config.TTSPassword,
   version: 'v1'
 });
 
 /******************************************************************************
-* Step #2: Configuring the Microphone
+* Configuring the Microphone
 *******************************************************************************/
-var micParams = { 
+let pauseDuration = 0;
+const micParams = { 
   'rate': '44100', 
   'channels': '2', 
   'debug': false, 
   'exitOnSilence': 6
 }
-var micInstance = mic(micParams);
-var micInputStream = micInstance.getAudioStream();
+const micInstance = mic(micParams);
+const micInputStream = micInstance.getAudioStream();
 micInputStream.on('pauseComplete', ()=> {
-  console.log('Got SIGNAL pauseComplete');
+  console.log('Microphone paused for', pauseDuration, 'seconds.');
   setTimeout(function() {
       micInstance.resume();
-  }, 3000); //Stop listening when speaker is talking
+      console.log('Microphone resumed.')
+  }, Math.round(pauseDuration * 1000)); //Stop listening when speaker is talking
 });
 
 micInstance.start();
 console.log('TJ is listening, you may speak now.');
 
 /******************************************************************************
-* Step #3: Speech To Text
+* Speech To Text
 *******************************************************************************/
-var textStream = micInputStream.pipe(speechToText.createRecognizeStream({
+const textStream = micInputStream.pipe(speechToText.createRecognizeStream({
   content_type: 'audio/l16; rate=44100; channels=2',
   interim_results: true,
   smart_formatting: true,
 })).setEncoding('utf8');
 
 /******************************************************************************
-* Step #4: Get Tone Emotion
+* Get Emotional Tone
 *******************************************************************************/
-var getEmotion = (text) => {
+const getEmotion = (text) => {
   return new Promise((resolve) => {
-    var maxScore = 0;
-    var emotion = null;
+    let maxScore = 0;
+    let emotion = null;
     toneAnalyzer.tone({text: text}, (err, tone) => {
-      var tones = tone.document_tone.tone_categories[0].tones;
-      for (var i=0; i<tones.length; i++) {
+      let tones = tone.document_tone.tone_categories[0].tones;
+      for (let i=0; i<tones.length; i++) {
         if (tones[i].score > maxScore){
           maxScore = tones[i].score;
           emotion = tones[i].tone_id;
@@ -87,11 +89,12 @@ var getEmotion = (text) => {
   })
 };
 
+
 /******************************************************************************
-* Step #5: Text To Speech
+* Text To Speech
 *******************************************************************************/
-var speakResponse = (text) => {
-  var params = {
+const speakResponse = (text) => {
+  const params = {
     text: text,
     voice: config.voice,
     accept: 'audio/wav'
@@ -99,26 +102,29 @@ var speakResponse = (text) => {
   textToSpeech.synthesize(params)
   .pipe(fs.createWriteStream('output.wav'))
   .on('close', () => {
-    micInstance.pause();
-    player.play('output.wav');
+    probe('output.wav', function(err, probeData) {
+      pauseDuration = probeData.format.duration + 0.5;
+      micInstance.pause();
+      player.play('output.wav');
+    });
   });
 }
 
 /******************************************************************************
-* Step #6: Conversation
+* Conversation
 ******************************************************************************/
-var dialog_on = false;
-var context = {};
-var watson_response = '';
+let start_dialog = false;
+let context = {};
+let watson_response = '';
 
 textStream.on('data', (user_speech) => {
   user_speech = user_speech.toLowerCase();
   console.log('Watson hears: ', user_speech);
   if (user_speech.indexOf(attentionWord.toLowerCase()) >= 0){
-    dialog_on = true
+    start_dialog = true
   }
 
-  if (dialog_on) {
+  if (start_dialog) {
     getEmotion(user_speech).then((detectedEmotion) => {
       context.emotion = detectedEmotion.emotion;
       console.log('Detected Emotion: ', 
@@ -130,12 +136,16 @@ textStream.on('data', (user_speech) => {
         context: context
       }, (err, response) => {
         context = response.context;
-        watson_response =  response.output.text[0]  ;
+        watson_response =  response.output.text[0];
         speakResponse(watson_response);
         console.log('Watson says:', watson_response);
+        if(context.system.dialog_turn_counter == 2) {
+          context = {};
+          start_dialog = false;
+        }
       });
     });  
   } else {
-    console.log('Waiting to hear the word '', attentionWord, ''');
+    console.log('Waiting to hear the word "', attentionWord, '"');
   }
 });
