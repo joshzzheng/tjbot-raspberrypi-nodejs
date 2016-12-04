@@ -116,7 +116,7 @@ const speakResponse = (text) => {
 /******************************************************************************
 * Conversation
 ******************************************************************************/
-let dialog_on = false;
+let start_dialog = false;
 let context = {};
 let watson_response = '';
 
@@ -124,10 +124,10 @@ textStream.on('data', (user_speech) => {
   user_speech = user_speech.toLowerCase();
   console.log('Watson hears: ', user_speech);
   if (user_speech.indexOf(attentionWord.toLowerCase()) >= 0){
-    dialog_on = true
+    start_dialog = true;
   }
 
-  if (dialog_on) {
+  if (start_dialog) {
     getEmotion(user_speech).then((detectedEmotion) => {
       context.emotion = detectedEmotion.emotion;
       console.log('Detected Emotion: ', 
@@ -142,7 +142,7 @@ textStream.on('data', (user_speech) => {
         watson_response =  response.output.text[0];
         speakResponse(watson_response);
         console.log('Watson says:', watson_response);
-        if(context.system.dialog_turn_counter == 2) {
+        if (context.system.dialog_turn_counter == 2) {
           context = {};
           start_dialog = false;
         }
