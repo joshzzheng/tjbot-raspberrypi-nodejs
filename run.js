@@ -40,10 +40,10 @@ const textToSpeech = watson.text_to_speech({
 * Configuring the Microphone
 *******************************************************************************/
 const micParams = { 
-  'rate': '44100', 
-  'channels': '2', 
-  'debug': false, 
-  'exitOnSilence': 6
+  rate: 44100, 
+  channels: 2, 
+  debug: false, 
+  exitOnSilence: 6
 }
 const micInstance = mic(micParams);
 const micInputStream = micInstance.getAudioStream();
