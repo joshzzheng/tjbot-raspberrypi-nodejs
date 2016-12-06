@@ -101,13 +101,12 @@ const speakResponse = (text) => {
   .pipe(fs.createWriteStream('output.wav'))
   .on('close', () => {
     probe('output.wav', function(err, probeData) {
-      pauseDuration = probeData.format.duration + 0.5;
+      pauseDuration = probeData.format.duration + 0.2;
       micInstance.pause();
       player.play('output.wav');
     });
   });
 }
-speakResponse('Hi there, I am awake.');
 
 /******************************************************************************
 * Conversation
@@ -116,11 +115,12 @@ let start_dialog = false;
 let context = {};
 let watson_response = '';
 
+speakResponse('Hi there, I am awake.');
 textStream.on('data', (user_speech) => {
   user_speech = user_speech.toLowerCase();
   console.log('Watson hears: ', user_speech);
-  if (user_speech.indexOf(attentionWord.toLowerCase()) >= 0){
-    start_dialog = true
+  if (user_speech.indexOf(attentionWord.toLowerCase()) >= 0) {
+    start_dialog = true;
   }
 
   if (start_dialog) {
