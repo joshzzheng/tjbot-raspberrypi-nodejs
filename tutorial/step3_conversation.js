@@ -11,15 +11,12 @@ const conversation = watson.conversation({
 
 prompt.start();
 
-//let workspaceID = '71e749a4-e3a6-4206-b621-315f05af877c';
 let context = {};
-
 let converse = () => 
   prompt.get('input', (err, result) => {
 
-    context.emotion = 'joy'; //replace with results from Tone Analzyer
+    context.emotion = 'anger'; //replace with results from Tone Analzyer
     conversation.message({
-      //workspace_id: workspaceID,
       workspace_id: config.ConWorkspace,
       input: {'text': result.input},
       context: context

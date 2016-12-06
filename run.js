@@ -63,11 +63,10 @@ console.log('TJ is listening, you may speak now.');
 /******************************************************************************
 * Speech To Text
 *******************************************************************************/
-const textStream = micInputStream.pipe(speechToText.createRecognizeStream({
-  content_type: 'audio/l16; rate=44100; channels=2',
-  interim_results: true,
-  smart_formatting: true,
-})).setEncoding('utf8');
+const textStream = micInputStream.pipe(
+  speechToText.createRecognizeStream({
+    content_type: 'audio/l16; rate=44100; channels=2',
+  })).setEncoding('utf8');
 
 /******************************************************************************
 * Get Emotional Tone
@@ -117,22 +116,19 @@ let context = {};
 let watson_response = '';
 
 speakResponse('Hi there, I am awake.');
-textStream.on('data', (user_speech) => {
-  user_speech = user_speech.toLowerCase();
-  console.log('Watson hears: ', user_speech);
-  if (user_speech.indexOf(attentionWord.toLowerCase()) >= 0) {
+textStream.on('data', (user_speech_text) => {
+  user_speech_text = user_speech_text.toLowerCase();
+  console.log('Watson hears: ', user_speech_text);
+  if (user_speech_text.indexOf(attentionWord.toLowerCase()) >= 0) {
     start_dialog = true;
   }
 
   if (start_dialog) {
-    getEmotion(user_speech).then((detectedEmotion) => {
+    getEmotion(user_speech_text).then((detectedEmotion) => {
       context.emotion = detectedEmotion.emotion;
-      console.log('Detected Emotion: ', 
-                  detectedEmotion.emotion, 
-                  detectedEmotion.maxScore);
       conversation.message({
         workspace_id: config.ConWorkspace,
-        input: {'text': user_speech},
+        input: {'text': user_speech_text},
         context: context
       }, (err, response) => {
         context = response.context;

@@ -9,7 +9,7 @@ const text_to_speech = watson.text_to_speech({
   version: 'v1'
 });
 
-let text = 'Hello World'
+let text = 'Hey guys, I am Watson'
 
 const params = {
   text: text,
@@ -18,7 +18,7 @@ const params = {
 };
 
 text_to_speech.synthesize(params)
-.pipe(fs.createWriteStream('output.wav'))
-.on('close', function() {
-  player.play('output.wav');
-});
+  .pipe(fs.createWriteStream('output.wav'))
+  .on('close', function() {
+    player.play('output.wav');
+  });
