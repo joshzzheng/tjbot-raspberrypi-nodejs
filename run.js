@@ -39,7 +39,6 @@ const textToSpeech = watson.text_to_speech({
 /******************************************************************************
 * Configuring the Microphone
 *******************************************************************************/
-let pauseDuration = 0;
 const micParams = { 
   'rate': '44100', 
   'channels': '2', 
@@ -48,6 +47,8 @@ const micParams = {
 }
 const micInstance = mic(micParams);
 const micInputStream = micInstance.getAudioStream();
+
+let pauseDuration = 0;
 micInputStream.on('pauseComplete', ()=> {
   console.log('Microphone paused for', pauseDuration, 'seconds.');
   setTimeout(function() {
