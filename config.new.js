@@ -9,18 +9,18 @@ exports.voice = 'en-US_MichaelVoice';
 // en-US_MichaelVoice (the default)
 
 // Credentials for Watson Speech to Text service
-exports.STTUsername = '' ;
-exports.STTPassword = '' ;
+exports.STTUsername = '';
+exports.STTPassword = '';
 
 // Credentials for Watson Conversation service
-exports.ConUsername = '' ;
-exports.ConPassword = '' ;
+exports.ConUsername = '';
+exports.ConPassword = '';
 exports.ConWorkspace = ''
 
 //Credentials for Watson Tone Analyzer service
-exports.ToneUsername = '' ;
-exports.TonePassword = '' ;
+exports.ToneUsername = '';
+exports.TonePassword = '';
 
 //Credentials for Watson Text to Speech service
-exports.TTSUsername = '' ;
-exports.TTSPassword = '' ;
+exports.TTSUsername = '';
+exports.TTSPassword = '';
