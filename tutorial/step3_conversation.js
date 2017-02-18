@@ -15,7 +15,7 @@ let context = {};
 let converse = () => 
   prompt.get('input', (err, result) => {
 
-    context.emotion = 'anger'; //replace with results from Tone Analzyer
+    context.emotion = 'sadness'; //replace with results from Tone Analzyer
     conversation.message({
       workspace_id: config.ConWorkspace,
       input: {'text': result.input},
