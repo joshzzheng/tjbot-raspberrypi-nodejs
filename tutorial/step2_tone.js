@@ -9,6 +9,6 @@ const tone_analyzer = watson.tone_analyzer({
 });
 
 let text = 'I love watson';
-tone_analyzer.tone({text: text}, function(err, tone) {
+tone_analyzer.tone({text: text}, (err, tone) => {
   console.log(JSON.stringify(tone, null, 2));
 });

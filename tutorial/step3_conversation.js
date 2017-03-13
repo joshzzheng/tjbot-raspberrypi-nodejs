@@ -20,7 +20,7 @@ let converse = () =>
       workspace_id: config.ConWorkspace,
       input: {'text': result.input},
       context: context
-    }, function(err, response) {
+    }, (err, response) => {
       context = response.context;
       watson_response =  response.output.text[0];
       console.log('Watson says:', watson_response);

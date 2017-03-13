@@ -101,10 +101,10 @@ const speakResponse = (text) => {
   textToSpeech.synthesize(params)
   .pipe(fs.createWriteStream('output.wav'))
   .on('close', () => {
-    probe('output.wav', function(err, probeData) {
+    probe('output.wav', (err, probeData) => {
       pauseDuration = probeData.format.duration + 0.2;
       micInstance.pause();
-      exec('aplay output.wav', function (error, stdout, stderr) {
+      exec('aplay output.wav', (error, stdout, stderr) => {
         if (error !== null) {
           console.log('exec error: ' + error);
         }

@@ -25,6 +25,6 @@ const textStream = micInputStream.pipe(
     content_type: 'audio/l16; rate=44100; channels=2'
   })).setEncoding('utf8');
 
-textStream.on('data', function(user_speech_text) {
+textStream.on('data', (user_speech_text) => {
   console.log('Watson hears:', user_speech_text);
 });

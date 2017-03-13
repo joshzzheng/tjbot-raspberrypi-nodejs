@@ -19,6 +19,6 @@ const params = {
 
 text_to_speech.synthesize(params)
   .pipe(fs.createWriteStream('output.wav'))
-  .on('close', function() {
+  .on('close', () => {
     player.play('output.wav');
   });
